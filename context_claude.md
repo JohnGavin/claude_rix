@@ -93,6 +93,80 @@ pkgs.rPackages.buildRPackage {
 - [rix cachix workflow](https://github.com/ropensci/rix/blob/main/.github/workflows/cachix-dev-env.yml)
 - [rix documentation](https://docs.ropensci.org/rix/)
 
+### 5. GitHub Actions Workflow Decision Guide
+
+**CRITICAL**: Choose the right environment (Nix vs native R) for each CI/CD task.
+
+#### Quick Decision Matrix
+
+| Task | Use | Why |
+|------|-----|-----|
+| **R CMD check** | Nix | Must match local dev environment exactly |
+| **Unit tests** | Nix | Reproducibility critical |
+| **Data pipelines** | Nix | Reproducibility critical |
+| **pkgdown (no Quarto)** | Nix | Works fine, maintainreproducibility |
+| **pkgdown + Quarto vignettes** | Native R (r-lib/actions) | **Nix incompatible** with bslib |
+| **Vignette rendering** | targets (both) | Pre-build with targets, commit HTML |
+
+#### The Fundamental Incompatibility
+
+**❌ Nix + pkgdown + Quarto + bslib = IMPOSSIBLE**
+
+```
+Quarto vignettes → require Bootstrap 5 → require bslib →
+requires file copying from /nix/store → BLOCKED (read-only) → FAILS
+```
+
+**Why this cannot be fixed**:
+- Nix: `/nix/store` is read-only by design (ensures reproducibility)
+- bslib: Must copy JS/CSS files at runtime (design requirement)
+- Quarto: Requires Bootstrap 5/bslib (design requirement)
+
+These are three immutable constraints that create a fundamental incompatibility.
+
+#### Solution: Hybrid Workflow
+
+**For projects with Quarto vignettes**:
+
+```yaml
+# R-CMD-check.yml - Use Nix (reproducibility)
+- uses: cachix/install-nix-action@v20
+- run: nix-shell default-ci.nix --run "Rscript -e 'devtools::check()'"
+
+# targets-pkgdown.yml - Use Native R (compatibility)
+- uses: r-lib/actions/setup-r@v2
+- run: Rscript -e 'targets::tar_make()'  # Pre-builds vignettes + pkgdown
+```
+
+**Key principle**: Use targets to pre-build vignettes (works in Nix), then pkgdown just copies pre-built HTML (fast, no Quarto needed in CI).
+
+#### When to Use What
+
+**Use Nix workflows when**:
+- ✅ Task requires exact reproducibility
+- ✅ Local development uses Nix
+- ✅ R CMD check, unit tests, data pipelines
+- ✅ pkgdown WITHOUT Quarto vignettes
+
+**Use native R (r-lib/actions) when**:
+- ✅ pkgdown with Quarto vignettes (Nix incompatible)
+- ✅ Tasks requiring runtime file modifications
+- ✅ Documentation builds (medium reproducibility acceptable)
+- ✅ Quick prototypes or previews
+
+**Use targets + pre-built vignettes when**:
+- ✅ Quarto vignettes + pkgdown + Nix development
+- ✅ Computationally expensive vignettes
+- ✅ Vignettes with large datasets
+- ✅ Need automation + fast CI
+
+#### References
+
+For complete details, see:
+- **[`TARGETS_PKGDOWN_SOLUTION.md`](./TARGETS_PKGDOWN_SOLUTION.md)** - Complete implementation guide
+- **[`NIX_VS_NATIVE_R_WORKFLOWS.md`](./NIX_VS_NATIVE_R_WORKFLOWS.md)** - Detailed decision criteria
+- **[`NIX_TROUBLESHOOTING.md`](./NIX_TROUBLESHOOTING.md#pkgdown-with-quarto-vignettes)** - Troubleshooting
+
 ## Session Continuity Strategies
 
 ### What Persists Across Session Restarts

@@ -2,6 +2,8 @@
 
 This workspace provides comprehensive documentation and tooling for Claude agents working on R package development projects using Nix, rix, and reproducible workflows.
 
+> **Repository Structure:** This is a parent git repository containing central documentation and utilities. Individual projects (random_walk, statues_named_john, etc.) are in subdirectories, each with their own separate git repositories. See [Issue #62](https://github.com/JohnGavin/statues_named_john/issues/62) for rationale.
+
 ## Quick Start
 
 ### For Claude Agents (New Session)
@@ -109,6 +111,16 @@ R package demonstrating random walk simulations with:
 - Pre-computed targets pipeline
 - Comprehensive test suite
 - pkgdown documentation site
+- Repository: https://github.com/JohnGavin/randomwalk
+
+### statues_named_john
+R package for analyzing memorial/statue data with:
+- Multi-source data integration (GLHER API, Wikidata, OpenStreetMap)
+- Quarto vignettes with interactive maps
+- targets pipeline for data processing
+- pkgdown documentation site
+- Repository: https://github.com/JohnGavin/statues_named_john
+- Documented lessons: [Issue #49](https://github.com/JohnGavin/statues_named_john/issues/49) (pkgdown + Nix + Quarto incompatibility)
 
 (Add other projects here as they are created)
 
@@ -204,6 +216,15 @@ See [`NIX_TROUBLESHOOTING.md`](./NIX_TROUBLESHOOTING.md) for comprehensive guida
 
 ## Recent Updates
 
+### 2025-12-02: Central Repository and pkgdown + Nix Documentation
+- **Created central git repository** for claude_rix ([Issue #62](https://github.com/JohnGavin/statues_named_john/issues/62))
+- **Documented pkgdown + Quarto + bslib incompatibility with Nix**
+  - Updated `NIX_TROUBLESHOOTING.md` with comprehensive pkgdown section
+  - Updated `NIX_WORKFLOW.md` with "Known Limitations" section
+  - Created wiki page content for statues_named_john project
+- **Repository structure:** Parent repo with project subdirectories (each has own git repo)
+- **Purpose:** Track cross-project issues, maintain central docs, provide lessons-learned wiki
+
 ### 2025-11-27: Documentation Consolidation
 - Created comprehensive `AGENTS.md` guide with session management
 - Created `NIX_TROUBLESHOOTING.md` with environment degradation solutions
@@ -224,5 +245,6 @@ See [`context_claude.md`](./context_claude.md) for complete guidelines.
 
 ---
 
-**Last Updated:** 2025-11-27
+**Last Updated:** 2025-12-02
+**Repository:** https://github.com/JohnGavin/claude_rix
 **Maintained for:** Claude agents working on R package development projects

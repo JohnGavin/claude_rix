@@ -1,0 +1,314 @@
+# Nix Workflow Quick Start Guide
+
+**For setting up a new R package project with reproducible Nix workflow**
+
+---
+
+## Prerequisites
+
+- ✅ Running inside nix shell: `caffeinate -i ~/docs_gh/rix.setup/default.sh`
+- ✅ Cachix configured: `cachix authtoken <YOUR_TOKEN>`
+- ✅ R package with DESCRIPTION file
+- ✅ GitHub repository created
+
+---
+
+## Setup Steps (One-Time Per Project)
+
+### 1. Copy R Setup Script
+
+```bash
+# From project root (e.g., /Users/johngavin/docs_gh/claude_rix/mypackage/)
+mkdir -p R/setup
+cp ../random_walk/R/setup/generate_nix_files.R R/setup/
+```
+
+### 2. Generate Nix Files
+
+```r
+# In R (inside nix shell)
+source("R/setup/generate_nix_files.R")
+
+# Generate all three files (package.nix, default-ci.nix, default.nix)
+generate_all_nix_files()
+
+# Verify syntax (optional but recommended)
+generate_all_nix_files(verify = TRUE)
+```
+
+This creates:
+- `package.nix` - Package derivation (runtime deps)
+- `default-ci.nix` - CI/dev environment (all deps + tools)
+- `default.nix` - Symlink to default-ci.nix
+
+### 3. Copy GitHub Actions Workflow
+
+```bash
+mkdir -p .github/workflows
+cp ../random_walk/.github/workflows/nix-ci.yml .github/workflows/
+```
+
+### 4. Configure GitHub Repository
+
+**a) Add Cachix Token Secret:**
+1. Go to: `https://github.com/YOUR_USERNAME/YOUR_REPO/settings/secrets/actions`
+2. Click: "New repository secret"
+3. Name: `CACHIX_AUTH_TOKEN`
+4. Value: Your cachix token (from `cachix authtoken`)
+
+**b) Enable GitHub Pages:**
+1. Go to: `https://github.com/YOUR_USERNAME/YOUR_REPO/settings/pages`
+2. Source: Select "GitHub Actions"
+3. Save
+
+### 5. Initial Commit
+
+```r
+# Using R packages (NOT bash git commands)
+gert::git_add(c(
+  "R/setup/generate_nix_files.R",
+  "package.nix",
+  "default-ci.nix",
+  "default.nix",
+  ".github/workflows/nix-ci.yml"
+))
+
+gert::git_commit("Setup: Add nix workflow files")
+
+# Push to cachix FIRST (mandatory!)
+system("../push_to_cachix.sh")
+
+# Then push to GitHub
+gert::git_push()
+```
+
+---
+
+## Daily Development Workflow
+
+### Making Changes
+
+```r
+# 1. Create issue & branch
+gh::gh("POST /repos/{owner}/{repo}/issues",
+  owner = "YOUR_USERNAME",
+  repo = "YOUR_REPO",
+  title = "Feature X",
+  body = "Description"
+)  # Note issue number, e.g., #42
+
+usethis::pr_init("fix-issue-42-feature-x")
+
+# 2. Make changes
+# Edit R/your_code.R
+# Edit tests/testthat/test-your_code.R
+
+# 3. Commit locally
+gert::git_add(c("R/your_code.R", "tests/testthat/test-your_code.R"))
+gert::git_commit("Add feature X for #42")
+
+# 4. Run checks
+devtools::load_all()
+devtools::test()
+devtools::check()
+
+# 5. If DESCRIPTION changed, regenerate nix files
+source("R/setup/generate_nix_files.R")
+update_nix_files()
+
+# 6. Push to cachix (MANDATORY!)
+system("../push_to_cachix.sh")
+
+# 7. Push to GitHub
+usethis::pr_push()
+
+# 8. Wait for CI to pass, then merge
+usethis::pr_merge_main()
+usethis::pr_finish()
+```
+
+---
+
+## When to Regenerate Nix Files
+
+Regenerate whenever you modify DESCRIPTION:
+
+```r
+# After usethis::use_package("newpkg")
+# After removing a dependency
+# After changing R version requirements
+
+source("R/setup/generate_nix_files.R")
+update_nix_files()
+
+# Commit the updated files
+gert::git_add(c("package.nix", "default-ci.nix"))
+gert::git_commit("Update nix files for new dependencies")
+```
+
+---
+
+## Troubleshooting
+
+### "Nix files out of date" in CI
+
+```r
+source("R/setup/generate_nix_files.R")
+generate_all_nix_files()
+gert::git_add(c("package.nix", "default-ci.nix"))
+gert::git_commit("Update nix files")
+```
+
+### Cachix Push Fails
+
+```bash
+# Re-authenticate
+cachix authtoken <YOUR_TOKEN>
+
+# Verify
+cat ~/.config/cachix/cachix.dhall
+```
+
+### Package Build Fails
+
+```bash
+# Build locally to debug
+nix-build package.nix
+
+# Check for uncommitted files
+git status
+
+# Verify DESCRIPTION dependencies match code
+devtools::check()
+```
+
+### Environment Degradation
+
+```bash
+# Exit and re-enter nix shell
+exit
+caffeinate -i ~/docs_gh/rix.setup/default.sh
+```
+
+---
+
+## Key Commands Reference
+
+### R Commands (Use These!)
+
+```r
+# Package development
+devtools::load_all()     # Reload after code changes
+devtools::test()         # Run tests
+devtools::check()        # R CMD check
+pkgdown::build_site()    # Build website
+
+# Nix file generation
+source("R/setup/generate_nix_files.R")
+generate_all_nix_files()
+update_nix_files()
+
+# Git/GitHub (R packages, NOT bash)
+usethis::pr_init("branch-name")
+gert::git_add("file.R")
+gert::git_commit("message")
+usethis::pr_push()
+usethis::pr_merge_main()
+
+# GitHub API
+gh::gh("POST /repos/{owner}/{repo}/issues", ...)
+```
+
+### Bash Commands (Minimal Use)
+
+```bash
+# Enter nix environment
+nix-shell default.nix
+
+# Build package
+nix-build package.nix
+
+# Push to cachix (MANDATORY before git push!)
+../push_to_cachix.sh
+```
+
+---
+
+## File Checklist
+
+### Files You Must Create
+- ✅ `R/setup/generate_nix_files.R` (copy from template)
+- ✅ `.github/workflows/nix-ci.yml` (copy from template)
+
+### Files Auto-Generated (Don't Edit Manually)
+- ✅ `package.nix` (generated by R/setup/generate_nix_files.R)
+- ✅ `default-ci.nix` (generated by rix::rix())
+- ✅ `default.nix` (symlink to default-ci.nix)
+
+### Files to Commit
+- ✅ All above files
+- ✅ `R/setup/*.R` (session logs)
+- ✅ `.gitignore` (add: `result`, `result-*`, `.nix-*`)
+
+### Files to Ignore
+- ❌ `result` (nix-build output)
+- ❌ `result-*` (nix build variants)
+- ❌ `.nix-shell-*` (nix shell temp)
+
+---
+
+## The 9-Step Workflow (Summary)
+
+```
+1. Create Issue (#42)
+   ↓
+2. Create Branch (usethis::pr_init())
+   ↓
+3. Make Changes (edit code, commit locally)
+   ↓
+4. Run Checks (devtools::check(), etc.)
+   ↓
+5. ⚠️ Push to Cachix (../push_to_cachix.sh) ⚠️
+   ↓
+6. Push to GitHub (usethis::pr_push())
+   ↓
+7. Wait for CI (GitHub Actions)
+   ↓
+8. Merge PR (usethis::pr_merge_main())
+   ↓
+9. Log Everything (R/setup/ files)
+```
+
+**Remember**: Step 5 (cachix push) is **MANDATORY** before Step 6 (git push)!
+
+### Understanding Cachix Push (rix Philosophy)
+
+From [rix documentation](https://cran.r-project.org/web/packages/rix/vignettes/z-binary_cache.html):
+
+**What happens when you push**:
+- 📦 Your package (randomwalk) gets pushed
+- 📦 ALL dependencies (ggplot2, logger, crew, etc.) also get pushed
+
+**This is expected and correct!** Cachix cannot selectively exclude dependencies.
+
+**Why it's not a problem**:
+- Users pulling get dependencies from `rstats-on-nix` cache (fast!)
+- Only your unique package (randomwalk) is actually downloaded from `johngavin` cache
+- Automatic GC cleans up duplicate dependencies when storage limit reached
+- Your packages are **pinned** (protected from GC) by `push_to_cachix.sh`
+
+**See**: `docs/CACHIX_WORKFLOW.md` for detailed explanation
+
+---
+
+## Next Steps
+
+1. ✅ Setup complete? Test the workflow with a small change
+2. 📖 Read [NIX_WORKFLOW.md](NIX_WORKFLOW.md) for detailed explanations
+3. 📚 Bookmark [rix documentation](https://docs.ropensci.org/rix/)
+4. 🔧 Customize workflow as needed (but maintain reproducibility!)
+
+---
+
+**Last updated**: December 2025
+**Version**: 1.0

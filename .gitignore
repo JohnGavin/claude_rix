@@ -1,0 +1,33 @@
+# Project subdirectories (separate git repos)
+biotech_etf_uk_world/
+birthday_nearest_weekend_W-S->S_S-T<-S/
+random_walk/
+statues_named_john/
+daily_dashboard/
+
+# R and IDE files
+.RData
+.Rhistory
+*.Rproj.user
+library/
+
+# System files
+.DS_Store
+$HOME/
+
+# Temporary and backup files
+old/
+*.tar.gz
+*.zip
+*_backup_*
+
+# Build outputs
+docs/
+_site/
+
+# Symlinks (tracked by git but content not)
+# default.R, default.nix, default.sh are symlinks - keep them
+
+# Local configuration
+.claude/settings.local.json
+.local-shell

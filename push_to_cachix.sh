@@ -213,7 +213,7 @@ main() {
   #
   log_step "📌 Step 5/5: Pinning $PKG_NAME v$PKG_VERSION..."
 
-  PIN_NAME="randomwalk-v${PKG_VERSION}"
+  PIN_NAME="${PKG_NAME}-v${PKG_VERSION}"
   log_info "Pin name: $PIN_NAME"
 
   if ! retry_command 3 5 "cachix pin johngavin '$PIN_NAME' '$RESULT' --keep-forever"; then

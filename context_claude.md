@@ -835,7 +835,9 @@ To comply with standard R package structure, restrict top-level folders to:
 
 ### CRITICAL: Updated 9-Step Workflow (December 2025)
 
-**The workflow is now 9 steps (was 8). Step 5 is MANDATORY: Push to cachix BEFORE git push.**
+**The workflow is now 9 steps (was 8). Step 5 is ABSOLUTELY MANDATORY: Push to cachix BEFORE git push.**
+
+**🚨 STEP 5 IS NOT OPTIONAL 🚨**
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
@@ -843,20 +845,36 @@ To comply with standard R package structure, restrict top-level folders to:
 │ 2. Create dev branch (usethis::pr_init())                     │
 │ 3. Make changes locally                                       │
 │ 4. Run all checks (devtools::check(), etc.)                   │
-│ 5. ⚠️ MANDATORY: Push to johngavin cachix ⚠️                   │
+│                                                                │
+│ 5. 🚨 ABSOLUTELY MANDATORY: Push to johngavin cachix 🚨        │
+│    ⛔ NEVER SKIP THIS STEP ⛔                                   │
+│    nix-build default-ci.nix                                   │
+│    └─→ ../push_to_cachix.sh  OR                               │
 │    └─→ nix-store ... | cachix push johngavin                  │
+│                                                                │
+│    💰 SKIPPING COSTS 2+ HOURS OF GITHUB ACTIONS ALLOCATION    │
+│    🔥 EACH WORKFLOW WASTES 20+ MINUTES COMPILING FROM SOURCE  │
+│                                                                │
 │ 6. Push to GitHub (usethis::pr_push())                        │
-│ 7. Wait for GitHub Actions (pulls from cachix - fast!)        │
+│    ↑ ONLY AFTER Step 5 succeeds                               │
+│ 7. Wait for GitHub Actions (pulls from cachix - FAST 2-5 min!)│
 │ 8. Merge PR (usethis::pr_merge_main())                        │
 │ 9. Log everything (R/setup/fix_issue_123.R)                   │
 └────────────────────────────────────────────────────────────────┘
 ```
 
-**Why Step 5 is Mandatory:**
-- GitHub Actions pulls packages from johngavin cachix instead of rebuilding
-- Saves CI/CD time and resources
-- Ensures identical builds locally and in CI
-- Prevents "works locally but fails in CI" issues
+**Why Step 5 is ABSOLUTELY Mandatory:**
+- ✅ GitHub Actions pulls packages from johngavin cachix (instant, NO rebuild)
+- ✅ Saves 20+ min per workflow × 3-6 workflows = **1-2 HOURS saved per PR**
+- ✅ Protects limited monthly GitHub Actions allocation
+- ✅ Ensures identical builds locally and in CI
+- ✅ Prevents "works locally but fails in CI" issues
+
+**Cost of Skipping Step 5:**
+- ❌ **20+ minutes wasted per workflow** (duckdb + hundreds of packages compiled from source)
+- ❌ **6+ workflows running** = 2+ hours of GitHub Actions time WASTED
+- ❌ **Monthly allocation depleted** on preventable compilation
+- ❌ **UNACCEPTABLE**
 
 ### 4.5 Generating Nix Files with rix
 
@@ -925,6 +943,57 @@ Regenerate nix files whenever you:
 - Update nixpkgs revision
 - Start a new project
 
+#### Managing Package Dependencies
+
+**ALWAYS use usethis functions to manage DESCRIPTION dependencies:**
+
+```r
+# Add a new package dependency
+usethis::use_package("dplyr")              # Adds to Imports
+usethis::use_package("ggplot2", "Suggests") # Adds to Suggests
+
+# After adding dependencies, regenerate nix files
+source("R/setup/generate_nix_files.R")
+update_nix_files()
+```
+
+**Why this is important:**
+- Ensures dependencies are properly declared
+- Systematic and traceable
+- Works with devtools::check()
+- Integrates with nix file generation
+
+**Common workflow:**
+```r
+# 1. Realize you need a new package
+library(newpackage)  # Error: package not found
+
+# 2. Add to DESCRIPTION (not just install!)
+usethis::use_package("newpackage")
+
+# 3. Regenerate nix files
+update_nix_files()
+
+# 4. Restart nix shell to get new package
+exit
+nix-shell default.nix
+
+# 5. Continue development
+library(newpackage)  # ✓ Works
+```
+
+**Don't do this:**
+```r
+# ❌ BAD: Just installing without declaring
+install.packages("newpackage")
+library(newpackage)
+# Works locally, but:
+# - Not in DESCRIPTION
+# - Not in nix files
+# - CI will fail
+# - Other developers won't have it
+```
+
 #### CI Verification
 
 GitHub Actions includes a job that verifies nix files are up to date:
@@ -990,12 +1059,25 @@ pkgdown::build_site()
 - Fix any errors/warnings/notes
 - Ensure everything passes with no issues
 
-### 5.5 Step 5: **MANDATORY** Push to Cachix BEFORE Git Push
-```bash
-# CRITICAL: Push to johngavin cachix BEFORE pushing to GitHub
-# This ensures GitHub Actions can pull from cache instead of rebuilding
-# Saves time and ensures consistent builds between local and CI/CD
+### 5.5 Step 5: **🚨 ABSOLUTELY MANDATORY 🚨** Push to Cachix BEFORE Git Push
 
+**⛔ NEVER SKIP THIS STEP ⛔**
+
+**Cost of Skipping:**
+- 🔥 **20+ minutes wasted per workflow** compiling duckdb and hundreds of packages from source
+- 💰 **Limited monthly GitHub Actions allocation exhausted** (6+ jobs × 20 min = 2+ hours wasted)
+- ❌ **Unacceptable waste of resources**
+
+**THIS STEP IS NOT OPTIONAL. IT MUST BE DONE EVERY SINGLE TIME BEFORE PUSHING TO GITHUB.**
+
+```bash
+# 🚨 CRITICAL: Push to johngavin cachix BEFORE pushing to GitHub
+# This is NOT optional. This is NOT a suggestion. This MUST be done.
+
+# Step 5a: Build the dev environment locally
+nix-build default-ci.nix
+
+# Step 5b: Push to johngavin cachix
 # RECOMMENDED: Use the generic helper script (from any project directory)
 ../push_to_cachix.sh
 
@@ -1009,6 +1091,9 @@ pkgdown::build_site()
 nix-store -qR --include-outputs $(nix-instantiate default-ci.nix) | \
   grep -iE '<your-package-name>|btw' | \
   cachix push johngavin
+
+# Step 5c: VERIFY the push succeeded
+# Check https://app.cachix.org/cache/johngavin to confirm packages are cached
 ```
 
 **Generic Script Location:**
@@ -1019,16 +1104,34 @@ This script can be used from **any** project subdirectory. It auto-detects:
 - Nix file to use (default-ci.nix or default.nix)
 - All packages to push (including btw)
 
-**Why This is Mandatory:**
-- ✅ GitHub Actions pulls from johngavin cachix (instant, no rebuild)
+**Why This is Absolutely Mandatory:**
+- ✅ GitHub Actions pulls from johngavin cachix (instant, NO 20-minute rebuild)
+- ✅ Saves 20+ minutes per workflow × 3-6 workflows = 1-2 HOURS saved
+- ✅ Protects limited GitHub Actions monthly allocation
 - ✅ Consistent derivations between local build and CI/CD
-- ✅ Saves GitHub Actions minutes and resources
 - ✅ Prevents "works locally but fails in CI" issues
 
-**Workflow Order:**
+**Consequences of Skipping:**
+- ❌ Every workflow compiles duckdb from source (5-10 min)
+- ❌ Every workflow compiles hundreds of R packages (10-15 min)
+- ❌ Multiple workflows running = exponential waste
+- ❌ Monthly allocation depleted on preventable compilation
+- ❌ UNACCEPTABLE
+
+**Workflow Order (DO NOT DEVIATE):**
 ```
-Local Build → johngavin cachix → GitHub repo → GitHub Actions
-              ↑ PUSH HERE FIRST                ↓ pulls from cachix (fast!)
+Step 4: Commit changes
+   ↓
+Step 5: BUILD LOCALLY → Push to johngavin cachix ← YOU MUST DO THIS
+   ↓
+Step 6: Push to GitHub → GitHub Actions pulls from cachix (2-5 min, fast!)
+```
+
+**NEVER DO THIS:**
+```
+❌ Step 4: Commit
+❌ Step 6: Push to GitHub  ← WRONG! Skipped Step 5!
+❌ GitHub Actions builds from source (20 min per workflow, wasteful)
 ```
 
 ### 5.6 Step 6: Push to Remote (Triggers GitHub Actions)

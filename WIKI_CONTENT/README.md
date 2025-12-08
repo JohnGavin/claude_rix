@@ -20,6 +20,7 @@ This directory contains the **source files** for the claude_rix wiki pages. Thes
 | `Pkgdown-Quarto-Nix-Issue.md` | [Pkgdown-Quarto-Nix-Issue](https://github.com/JohnGavin/claude_rix/wiki/Pkgdown-Quarto-Nix-Issue) | ✅ Published | 311 |
 | `Targets-Pkgdown-Complete-Guide.md` | [Targets-Pkgdown-Complete-Guide](https://github.com/JohnGavin/claude_rix/wiki/Targets-Pkgdown-Complete-Guide) | ✅ Published | 800+ |
 | `FAQs.md` | [FAQs](https://github.com/JohnGavin/claude_rix/wiki/FAQs) | ✅ Published | 500+ |
+| `Nix-Environment-Troubleshooting.md` | [Nix-Environment-Troubleshooting](https://github.com/JohnGavin/claude_rix/wiki/Nix-Environment-Troubleshooting) | 🔄 Ready to Publish | 837 |
 
 ---
 

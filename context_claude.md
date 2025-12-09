@@ -1313,6 +1313,13 @@ requireNamespace("randomwalk", quietly = TRUE)
 - Add brief text as captions to summarize each graph or table
 - Add brief summary of purpose as section opening sentence for each vignette section
 
+## 12. Infographics
+
+### 12.1 Major Version Visualizations
+- Generate an Infographic explaining how the project-specific R package works when it reaches a major version.
+- Embed the infographic into the `README.md` on the GH repo via a targets target.
+- The target should only run when the version number reaches a milestone or substantially changes (major release).
+
 # Tidy up a project
 + at the end of a project's session
   + check carefully that all the relevant files in that project's folder (only) are checked into the remote github repo

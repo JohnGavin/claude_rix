@@ -42,7 +42,7 @@ maintain_env <- function() {
     if (is.na(pkgs_str)) return(character(0))
     pkgs <- strsplit(pkgs_str, ",")[[1]]
     pkgs <- trimws(pkgs)
-    pkgs <- gsub("\s*\([^)]*\)", "", pkgs)
+    pkgs <- gsub("\\s*\\([^)]*\\)", "", pkgs)
     pkgs <- pkgs[pkgs != "R"]
     return(pkgs)
   }

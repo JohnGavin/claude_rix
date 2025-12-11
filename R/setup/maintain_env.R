@@ -116,7 +116,7 @@ maintain_env <- function() {
     "# Optional: Setup Positron/RStudio wrapper if needed (simplified from existing default.nix)",
     "export R_MAKEVARS_USER=/dev/null",
     "unset CI",
-    "printf \"Environment loaded.\\n\"",
+    "echo Environment loaded.",
     sep = "\n"
   )
 

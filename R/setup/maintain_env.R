@@ -105,74 +105,16 @@ printf "Environment loaded.\n"
   )
   
   message("Generated default.nix")
+}
+
+# Helper function for formatting Nix lists, now globally available
+nix_list <- function(pkgs) {
+  if (length(pkgs) == 0) return("")
+  paste(pkgs, collapse = "\n    ")
+}
 
   # 4. Generate package.nix (for Nix derivation builds)
   pkg_name <- desc[1, "Package"]
-  
-  # imports go to propagatedBuildInputs
-  # suggests (for building vignettes/tests) go to nativeBuildInputs
-
-  # Function to generate Nix expressions for Git packages
-  remotes_to_nix_pkgs <- function(remotes_list) {
-    if (is.null(remotes_list) || length(remotes_list) == 0) return("")
-    
-    nix_expressions <- c()
-    for (remote_full in remotes_list) {
-      # Expected format: owner/repo or owner/repo@ref
-      remote <- strsplit(remote_full, "@")[[1]][1] # Remove ref for now
-      parts <- strsplit(remote, "/")[[1]]
-      owner <- parts[1]
-      repo <- parts[2]
-
-      # Assuming these are R packages. The name in pkgs.rPackages should be the repo name.
-      # This needs careful mapping if the R package name != repo name.
-      # For now, assuming repo name is the R package name in Nixpkgs.
-      nix_expressions <- c(nix_expressions, paste0("pkgs.rPackages.", repo))
-    }
-    return(paste(nix_expressions, collapse = "\n    "))
-  }
-  
-  # Get Remotes for package.nix specific handling
-  remotes_str <- desc[1, "Remotes"]
-  package_remotes <- NULL
-  if (!is.na(remotes_str)) {
-    package_remotes <- trimws(strsplit(remotes_str, ",")[[1]])
-  }
-
-  package_nix_remotes_expr <- remotes_to_nix_pkgs(package_remotes)
-
-  # Combine regular R imports with the Git packages for propagatedBuildInputs
-  all_propagated_build_inputs <- c(
-    nix_list(imports),
-    if(nzchar(package_nix_remotes_expr)) package_nix_remotes_expr else NULL
-  )
-  
-  all_propagated_build_inputs_str <- paste(all_propagated_build_inputs, collapse = "\n    ")
-
-  package_nix_content <- sprintf(
-'{ pkgs ? import (fetchTarball "https://github.com/rstats-on-nix/nixpkgs/archive/2025-02-24.tar.gz") {} }:
-
-pkgs.rPackages.buildRPackage {
-  name = "%s";
-  src = ./.;
-
-  propagatedBuildInputs = with pkgs.rPackages; [
-    %s
-  ];
-
-  nativeBuildInputs = with pkgs.rPackages; [
-    %s
-  ];
-}
-', 
-    pkg_name, 
-    all_propagated_build_inputs_str,
-    nix_list(suggests)
-  )
-  
-  writeLines(package_nix_content, "package.nix")
-  message("Generated package.nix")
-}
 
 if (!interactive()) {
   maintain_env()

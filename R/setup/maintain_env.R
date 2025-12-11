@@ -16,7 +16,6 @@ library(rix)
 library(desc)
 library(glue)
 library(logger)
-library(dplyr)
 
 # Initialize logging
 log_appender(appender_file("inst/logs/nix_generation.log"))
@@ -108,13 +107,13 @@ generate_package_nix <- function(
   pkg_homepage <- desc_obj$get_field("URL", default = "")
 
   # Get dependencies
-  deps <- desc_obj$get_deps()
-  
-  imports <- dplyr::filter(deps, type == "Imports") |>
+  imports <- desc_obj$get_deps() %>%
+    dplyr::filter(type == "Imports") %>%
     dplyr::pull(package)
 
   # Only include vignette builders from Suggests
-  suggests <- dplyr::filter(deps, type == "Suggests") |>
+  suggests <- desc_obj$get_deps() %>%
+    dplyr::filter(type == "Suggests") %>%
     dplyr::pull(package)
 
   # Filter to only vignette-related packages
@@ -208,7 +207,7 @@ pkgs.rPackages.buildRPackage rec {{
   # Meta information
   meta = with pkgs.lib; {{
     description = "{pkg_title}";
-    longDescription = \'\' 
+    longDescription = \'\'
 {pkg_description}
     \'\';
     homepage = "{pkg_homepage}";
@@ -216,8 +215,7 @@ pkgs.rPackages.buildRPackage rec {{
     maintainers = [];
     platforms = platforms.unix;
   }};
-}}
-')
+}}')
 
   writeLines(nix_content, output_file)
   log_info("Generated {output_file}")
@@ -246,8 +244,12 @@ generate_default_ci_nix <- function(
 
   # Get ALL dependencies
   all_deps <- desc_obj$get_deps()
-  imports <- dplyr::filter(all_deps, type == "Imports") |> dplyr::pull(package)
-  suggests <- dplyr::filter(all_deps, type == "Suggests") |> dplyr::pull(package)
+  imports <- all_deps %>%
+    dplyr::filter(type == "Imports") %>%
+    dplyr::pull(package)
+  suggests <- all_deps %>%
+    dplyr::filter(type == "Suggests") %>%
+    dplyr::pull(package)
 
   # Combine and remove duplicates
   r_pkgs <- unique(c(imports, suggests))

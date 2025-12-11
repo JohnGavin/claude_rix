@@ -35,6 +35,12 @@ maintain_env <- function() {
 
   # 1. Read DESCRIPTION
   desc <- read.dcf("DESCRIPTION")
+  print(paste("Columns in desc:", paste(colnames(desc), collapse=", ")))
+  if ("Remotes" %in% colnames(desc)) {
+    print(paste("Remotes content:", desc[1, "Remotes"]))
+  } else {
+    print("Remotes column not found")
+  }
   
   get_packages <- function(field) {
     if (!(field %in% colnames(desc))) return(character(0))

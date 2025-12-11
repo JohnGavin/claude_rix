@@ -108,9 +108,12 @@ generate_package_nix <- function(
   pkg_homepage <- desc_obj$get_field("URL", default = "")
 
   # Get dependencies
-  imports <- desc_obj$get_deps() |
-    dplyr::filter(type == "Imports") |
-    dplyr::pull(package)
+  deps <- desc_obj$get_deps()
+  print(head(deps))
+  print(colnames(deps))
+  
+  imports <- deps |>
+    dplyr::filter(type == "Imports") |>
 
   # Only include vignette builders from Suggests
   suggests <- desc_obj$get_deps() |

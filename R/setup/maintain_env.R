@@ -102,7 +102,7 @@ maintain_env <- function() {
   # rix will write this into the nix file. 
   # We must ensure we don't double escape.
 
-  shell_hook <- r"---"(
+  shell_hook <- r"===(
 mkdir -p $HOME/.config/positron
 mkdir -p $HOME/.R/library
 echo "R_LIBS_USER=$HOME/.R/library" >> $HOME/.Renviron
@@ -111,7 +111,7 @@ echo "R_LIBS_USER=$HOME/.R/library" >> $HOME/.Renviron
 export R_MAKEVARS_USER=/dev/null
 unset CI
 printf "Environment loaded.\n"
-)---"
+)==="
 
   # System packages needed
   sys_pkgs <- c(

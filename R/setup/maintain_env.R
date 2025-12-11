@@ -16,6 +16,7 @@ library(rix)
 library(desc)
 library(glue)
 library(logger)
+library(dplyr)
 
 # Initialize logging
 log_appender(appender_file("inst/logs/nix_generation.log"))

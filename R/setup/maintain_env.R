@@ -259,7 +259,9 @@ generate_default_ci_nix <- function(
   sys_pkgs <- c("R", "git", "gh", "quarto", "pandoc", "curlMinimal", "glibcLocales", "nix", "which")
 
   # Pre-clean default.nix to avoid symlink issues
-  if (file.exists("default.nix")) file.remove("default.nix")
+  unlink("default.nix")
+
+  # Use rix to generate the file
 
   rix::rix(
     r_ver = nixpkgs_rev,

@@ -16,7 +16,6 @@ library(rix)
 library(desc)
 library(glue)
 library(logger)
-library(dplyr)
 
 # Initialize logging
 log_appender(appender_file("inst/logs/nix_generation.log"))
@@ -108,12 +107,9 @@ generate_package_nix <- function(
   pkg_homepage <- desc_obj$get_field("URL", default = "")
 
   # Get dependencies
-  deps <- desc_obj$get_deps()
-  print(head(deps))
-  print(colnames(deps))
-  
-  imports <- deps |>
+  imports <- desc_obj$get_deps() |>
     dplyr::filter(type == "Imports") |>
+    dplyr::pull(package)
 
   # Only include vignette builders from Suggests
   suggests <- desc_obj$get_deps() |
@@ -131,6 +127,9 @@ generate_package_nix <- function(
   
   if (length(git_pkgs_info) > 0) {
     git_pkg_names <- names(git_pkgs_info)
+    
+    # Remove git packages from imports if they are present (to avoid duplication/confusion)
+    imports <- setdiff(imports, git_pkg_names)
     
     derivations <- lapply(git_pkgs_info, function(pkg) {
       glue::glue('  
@@ -150,9 +149,6 @@ generate_package_nix <- function(
     })
     git_pkg_derivations <- paste(unlist(derivations), collapse = "\n")
   }
-
-  # Remove git packages from imports if they are present (to avoid duplication/confusion)
-  imports <- setdiff(imports, git_pkg_names)
 
   # Format for nix
   format_pkg_list <- function(pkgs) {
@@ -185,7 +181,7 @@ generate_package_nix <- function(
 let
 {git_pkg_derivations}
 in
-pkgs.rPackages.buildRPackage rec {{ 
+pkgs.rPackages.buildRPackage rec {{
   name = "{pkg_name}";
   version = "{pkg_version}";
 
@@ -194,14 +190,14 @@ pkgs.rPackages.buildRPackage rec {{
 
   # Runtime dependencies (Imports from DESCRIPTION)
   # These are propagated to users who install {pkg_name}
-  propagatedBuildInputs = with pkgs.rPackages; [ 
+  propagatedBuildInputs = with pkgs.rPackages; [
 {format_pkg_list(imports)}
-  ] ++ [ 
+  ] ++ [
 {format_git_pkg_list(git_pkg_names)}
   ];
 
   # Build-time dependencies (vignette builders)
-  nativeBuildInputs = with pkgs.rPackages; [ 
+  nativeBuildInputs = with pkgs.rPackages; [
 {format_pkg_list(vignette_pkgs)}
   ];
 
@@ -209,9 +205,9 @@ pkgs.rPackages.buildRPackage rec {{
   doCheck = false;
 
   # Meta information
-  meta = with pkgs.lib; {{ 
+  meta = with pkgs.lib; {{
     description = "{pkg_title}";
-    longDescription = \'\'
+    longDescription = \'\' 
 {pkg_description}
     \'\';
     homepage = "{pkg_homepage}";

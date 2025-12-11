@@ -131,7 +131,7 @@ maintain_env <- function() {
     r_ver = "4.4.2", # Use a fixed, recent R version
     r_pkgs = r_pkgs,
     system_pkgs = sys_pkgs,
-    git_pkgs = git_pkgs_list,
+    git_pkgs = NULL,
     ide = "none", # Use 'none' to avoid rix injecting strict rstudio/code wrappers
     project_path = ".",
     overwrite = TRUE,

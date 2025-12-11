@@ -6,10 +6,11 @@ nix_list <- function(pkgs) {
 
 # Helper function to generate Nix expressions for Git packages from Remotes field
 remotes_to_nix_pkgs <- function(remotes_list) {
+  print(paste("remotes_list in remotes_to_nix_pkgs:", paste(remotes_list, collapse = ", ")))
   if (is.null(remotes_list) || length(remotes_list) == 0) return("")
   
   nix_expressions <- c()
-  for (remote in remotes_list) {
+  for (remote_full in remotes_list) {
     # Expected format: owner/repo or owner/repo@ref
     remote <- strsplit(remote_full, "@")[[1]][1] # Remove ref for now
     parts <- strsplit(remote, "/")[[1]]

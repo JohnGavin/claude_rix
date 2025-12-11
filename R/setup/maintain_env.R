@@ -111,7 +111,7 @@ maintain_env <- function() {
   shell_hook <- paste(
     "mkdir -p $HOME/.config/positron",
     "mkdir -p $HOME/.R/library",
-    "echo \"R_LIBS_USER=$HOME/.R/library\" >> $HOME/.Renviron",
+    "echo R_LIBS_USER=$HOME/.R/library >> $HOME/.Renviron",
     "",
     "# Optional: Setup Positron/RStudio wrapper if needed (simplified from existing default.nix)",
     "export R_MAKEVARS_USER=/dev/null",

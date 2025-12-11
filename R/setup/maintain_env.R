@@ -108,7 +108,11 @@ generate_package_nix <- function(
   pkg_homepage <- desc_obj$get_field("URL", default = "")
 
   # Get dependencies
-  imports <- desc_obj$get_deps() |>
+  deps <- desc_obj$get_deps()
+  print("Structure of deps:")
+  print(str(deps))
+  
+  imports <- deps |>
     dplyr::filter(type == "Imports") |>
     dplyr::pull(package)
 

@@ -1117,3 +1117,17 @@ library(ggplot2)
 ---
 
 **End of Document**
+
+## Additional Troubleshooting
+
+### Persistent Service Workers
+**Problem:** Switching a page from Shinylive (WASM) to static HTML does not immediately fix "cannot open connection" errors in the browser.
+**Cause:** Shinylive registers a Service Worker (`shinylive-sw.js`) that intercepts network requests. Even after the server code is updated, the user's browser may still use the old Service Worker, which tries to load the (now missing) app.
+**Fix:**
+1. Users must clear their browser's Service Workers/Application Cache.
+2. Developers should ensure `shinylive-sw.js` is un-registered or removed from the deployment.
+
+### Hidden Quarto Extensions
+**Problem:** Removing `filters: - shinylive` from `_quarto.yml` is NOT sufficient to disable Shinylive.
+**Cause:** If the `_extensions/quarto-ext/shinylive/` directory exists in the project, Quarto automatically applies the extension filters during rendering, injecting Shinylive assets and Service Workers even if not explicitly requested.
+**Fix:** Delete the `_extensions/quarto-ext/shinylive/` directory entirely to permanently disable the functionality.

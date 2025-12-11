@@ -107,13 +107,13 @@ generate_package_nix <- function(
   pkg_homepage <- desc_obj$get_field("URL", default = "")
 
   # Get dependencies
-  imports <- desc_obj$get_deps() %>%
-    dplyr::filter(type == "Imports") %>%
+  imports <- desc_obj$get_deps() |>
+    dplyr::filter(type == "Imports") |>
     dplyr::pull(package)
 
   # Only include vignette builders from Suggests
-  suggests <- desc_obj$get_deps() %>%
-    dplyr::filter(type == "Suggests") %>%
+  suggests <- desc_obj$get_deps() |>
+    dplyr::filter(type == "Suggests") |>
     dplyr::pull(package)
 
   # Filter to only vignette-related packages
@@ -244,11 +244,11 @@ generate_default_ci_nix <- function(
 
   # Get ALL dependencies
   all_deps <- desc_obj$get_deps()
-  imports <- all_deps %>%
-    dplyr::filter(type == "Imports") %>%
+  imports <- all_deps |>
+    dplyr::filter(type == "Imports") |>
     dplyr::pull(package)
-  suggests <- all_deps %>%
-    dplyr::filter(type == "Suggests") %>%
+  suggests <- all_deps |>
+    dplyr::filter(type == "Suggests") |>
     dplyr::pull(package)
 
   # Combine and remove duplicates

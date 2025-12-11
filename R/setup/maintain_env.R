@@ -109,16 +109,12 @@ generate_package_nix <- function(
 
   # Get dependencies
   deps <- desc_obj$get_deps()
-  print("Structure of deps:")
-  print(str(deps))
   
-  imports <- deps |>
-    dplyr::filter(type == "Imports") |>
+  imports <- dplyr::filter(deps, type == "Imports") |>
     dplyr::pull(package)
 
   # Only include vignette builders from Suggests
-  suggests <- desc_obj$get_deps() |
-    dplyr::filter(type == "Suggests") |
+  suggests <- dplyr::filter(deps, type == "Suggests") |>
     dplyr::pull(package)
 
   # Filter to only vignette-related packages
@@ -250,8 +246,8 @@ generate_default_ci_nix <- function(
 
   # Get ALL dependencies
   all_deps <- desc_obj$get_deps()
-  imports <- all_deps |> dplyr::filter(type == "Imports") |> dplyr::pull(package)
-  suggests <- all_deps |> dplyr::filter(type == "Suggests") |> dplyr::pull(package)
+  imports <- dplyr::filter(all_deps, type == "Imports") |> dplyr::pull(package)
+  suggests <- dplyr::filter(all_deps, type == "Suggests") |> dplyr::pull(package)
 
   # Combine and remove duplicates
   r_pkgs <- unique(c(imports, suggests))

@@ -209,32 +209,51 @@ main() {
   echo ""
 
   #
-  # STEP 5: Pin package
+  # STEP 5: Pin package (only for release versions)
   #
   log_step "📌 Step 5/5: Pinning $PKG_NAME v$PKG_VERSION..."
 
-  PIN_NAME="${PKG_NAME}-v${PKG_VERSION}"
-  log_info "Pin name: $PIN_NAME"
+  # Check if this is a development version (.9000 suffix)
+  if [[ "$PKG_VERSION" == *.9000 ]]; then
+    log_warning "Development version detected (.9000 suffix)"
+    log_info "Skipping pin - development versions are subject to garbage collection"
+    log_info "This is intentional to prevent cache clutter"
+    log_info "Release versions (without .9000) will be pinned forever"
+    echo ""
+  else
+    # Release version - pin it forever
+    PIN_NAME="${PKG_NAME}-v${PKG_VERSION}"
+    log_info "Release version - pinning forever"
+    log_info "Pin name: $PIN_NAME"
 
-  if ! retry_command 3 5 "cachix pin johngavin '$PIN_NAME' '$RESULT' --keep-forever"; then
-    log_error "Failed to pin package after 3 attempts"
-    log_warning "Package pushed but not pinned - may be garbage collected"
-    log_info "Manually pin: cachix pin johngavin $PIN_NAME $RESULT --keep-forever"
-    exit 5
+    if ! retry_command 3 5 "cachix pin johngavin '$PIN_NAME' '$RESULT' --keep-forever"; then
+      log_error "Failed to pin package after 3 attempts"
+      log_warning "Package pushed but not pinned - may be garbage collected"
+      log_info "Manually pin: cachix pin johngavin $PIN_NAME $RESULT --keep-forever"
+      exit 5
+    fi
+
+    log_success "Pinned as $PIN_NAME (protected from GC forever)"
+    echo ""
   fi
-
-  log_success "Pinned as $PIN_NAME (protected from GC forever)"
-  echo ""
 
   #
   # SUCCESS
   #
   echo "═══════════════════════════════════════════════════════════"
-  log_success "SUCCESS! Package pushed and pinned to cachix"
+  if [[ "$PKG_VERSION" == *.9000 ]]; then
+    log_success "SUCCESS! Package pushed to cachix (dev version, not pinned)"
+  else
+    log_success "SUCCESS! Package pushed and pinned to cachix"
+  fi
   echo "═══════════════════════════════════════════════════════════"
   echo ""
   echo "📊 Your cache now contains:"
-  echo "   ✓ $PKG_NAME v$PKG_VERSION (pinned forever)"
+  if [[ "$PKG_VERSION" == *.9000 ]]; then
+    echo "   ✓ $PKG_NAME v$PKG_VERSION (dev version - subject to GC)"
+  else
+    echo "   ✓ $PKG_NAME v$PKG_VERSION (pinned forever)"
+  fi
   echo "   ✓ Dependencies (unpinned, will be GC'd when storage limit reached)"
   echo ""
   echo "🔗 Links:"
